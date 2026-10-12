@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<interface>
+
+  <menu id="ActionsPlaceholder1">
+    <item>
+      <attribute name="label" translatable="yes">Bank _Feeds…</attribute>
+      <attribute name="action">gnc-plugin-online-actions.BankFeedsAction</attribute>
+      <attribute name="tooltip" translatable="yes">Connect bank accounts through Open Banking and choose where their transactions go</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Sync Bank Feeds</attribute>
+      <attribute name="action">gnc-plugin-online-actions.SyncBankFeedsAction</attribute>
+      <attribute name="tooltip" translatable="yes">Download new transactions from every connected bank and review them</attribute>
+    </item>
+  </menu>
+
+  <menu id="BusinessPlaceholder1">
+    <item>
+      <attribute name="label" translatable="yes">_VAT Returns (HMRC MTD)…</attribute>
+      <attribute name="action">gnc-plugin-online-actions.VatReturnsAction</attribute>
+      <attribute name="tooltip" translatable="yes">Work out your UK VAT return from this book and file it with HMRC under Making Tax Digital</attribute>
+    </item>
+  </menu>
+
+</interface>

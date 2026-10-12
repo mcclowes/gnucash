@@ -1,0 +1,46 @@
+/* GnuCash application style, dark variant.
+
+   Loaded over gnucash.css when the desktop theme is dark. It is a
+   genuine inversion rather than a dimmed copy: the forest becomes the
+   ground, paper becomes the ink, and the accent lightens so it still
+   reads against it. */
+
+@define-color gnc_forest       #6fb39d;
+@define-color gnc_forest_deep  #8fcab6;
+@define-color gnc_forest_light #9fd6c4;
+@define-color gnc_slate        #a9bcb6;
+@define-color gnc_paper        #222a28;
+@define-color gnc_paper_warm   #1c2321;
+@define-color gnc_parchment    #181e1c;
+@define-color gnc_rule         #34403c;
+@define-color gnc_ink          #f1ecd6;
+@define-color gnc_ink_soft     #a7b1ab;
+@define-color gnc_coral        #ff7070;
+@define-color gnc_coral_ink    #ff9188;
+@define-color gnc_amber        #5a4a1c;
+@define-color gnc_on_accent    #101614;
+
+@define-color negative-numbers @gnc_coral_ink;
+
+@define-color register_header_bg_color #2b3532;
+@define-color register_primary_bg_color #212927;
+@define-color register_secondary_bg_color #262f2c;
+@define-color register_split_bg_color #2c3532;
+@define-color register_cursor_bg_color #4d4424;
+@define-color register_fg_color #ece6cf;
+
+*.gnc-class-register-header {
+  color: @gnc_ink_soft;
+}
+
+button.destructive-action {
+  color: #101614;
+}
+
+.gnc-online-pill.sandbox {
+  color: #f6e3ad;
+}
+
+.gnc-class-textview-dark * {
+  background-color: @gnc_paper;
+}

@@ -1,15 +1,281 @@
-/* Note: Widgets obtained from Glade files will not be addressable
+/* GnuCash application style.
+
+   Quiet by design: warm paper, forest ink, one coral accent kept for
+   things that need attention. No gradients, no drop shadows. Figures
+   use tabular numerals so columns of money line up.
+
+   gnucash-dark.css is layered on top of this file when the desktop
+   theme is dark; it redefines the palette and little else.
+
+   Note: Widgets obtained from Glade files will not be addressable
    unless they have been named or have style classes added. Only
    the widget type can be configured unless they are named in code */
 
 
+/* ------------------------------------------------------------------ */
+/* Palette                                                             */
+
+@define-color gnc_forest       #3c6c5e;
+@define-color gnc_forest_deep  #2f5449;
+@define-color gnc_forest_light #579c87;
+@define-color gnc_slate        #4b5f5f;
+@define-color gnc_paper        #fffdf3;
+@define-color gnc_paper_warm   #fbf7e6;
+@define-color gnc_parchment    #f1ecd6;
+@define-color gnc_rule         #dcd5b8;
+@define-color gnc_ink          #171d1b;
+@define-color gnc_ink_soft     #5a625e;
+@define-color gnc_coral        #ff7070;
+@define-color gnc_coral_ink    #b23b35;
+@define-color gnc_amber        #f6e3ad;
+@define-color gnc_on_accent    #fffdf3;
+
 /* Negative value label colors */
+@define-color negative-numbers @gnc_coral_ink;
+
 .gnc-class-default-color {
   color: @default-color;
 }
 
 .gnc-class-negative-numbers {
   color: @negative-numbers;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* The main window                                                     */
+
+#gnc-id-main-window,
+#gnc-id-main-window > box,
+#gnc-id-main-window notebook > stack {
+  background-color: @gnc_paper_warm;
+  color: @gnc_ink;
+}
+
+#gnc-id-main-window menubar {
+  background-color: @gnc_paper_warm;
+  border-bottom: 1px solid @gnc_rule;
+  padding: 0 4px;
+}
+
+#gnc-id-main-window menubar > menuitem {
+  padding: 4px 10px;
+  color: @gnc_ink;
+}
+
+#gnc-id-main-window menubar > menuitem:hover {
+  box-shadow: inset 0 -2px @gnc_forest;
+  color: @gnc_forest_deep;
+}
+
+#gnc-id-main-window toolbar {
+  background-color: @gnc_paper_warm;
+  border-bottom: 1px solid @gnc_rule;
+  padding: 2px 6px;
+}
+
+#gnc-id-main-window toolbar button {
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+#gnc-id-main-window toolbar button label {
+  color: @gnc_ink_soft;
+  font-size: 0.86em;
+}
+
+#gnc-id-main-window toolbar button:hover {
+  background-color: alpha(@gnc_forest, 0.08);
+  border-color: transparent;
+}
+
+#gnc-id-main-window toolbar separator {
+  background: transparent;
+  border-left: 1px solid @gnc_rule;
+  margin: 8px 6px;
+}
+
+/* Tabs: a rule under the page in front, nothing else. */
+#gnc-id-main-window notebook > header {
+  background-color: @gnc_paper_warm;
+  border-color: @gnc_rule;
+}
+
+#gnc-id-main-window notebook > header tab {
+  padding: 6px 14px;
+  min-height: 0;
+  color: @gnc_ink_soft;
+  box-shadow: none;
+}
+
+#gnc-id-main-window notebook > header tab:hover {
+  color: @gnc_ink;
+  box-shadow: inset 0 -2px alpha(@gnc_forest, 0.35);
+}
+
+#gnc-id-main-window notebook > header tab:checked {
+  color: @gnc_ink;
+  box-shadow: inset 0 -2px @gnc_forest;
+}
+
+#gnc-id-main-window notebook > header tab:checked label {
+  font-weight: 600;
+}
+
+/* Status and summary bars */
+#gnc-id-main-window statusbar {
+  background-color: @gnc_paper_warm;
+  border-top: 1px solid @gnc_rule;
+  color: @gnc_ink_soft;
+  font-size: 0.9em;
+  padding: 0 8px;
+}
+
+#gnc-id-summarybar,
+#gnc-id-account-summary-bar {
+  background-color: @gnc_parchment;
+  border: none;
+  border-top: 1px solid @gnc_rule;
+  border-radius: 0;
+  padding: 6px 12px;
+  font-feature-settings: "tnum";
+}
+
+#gnc-id-summarybar *,
+#gnc-id-account-summary-bar *,
+#gnc-id-summarybar button,
+#gnc-id-account-summary-bar button {
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  color: @gnc_ink;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Lists and trees                                                     */
+
+treeview.view {
+  font-feature-settings: "tnum";
+  -GtkTreeView-horizontal-separator: 10;
+  -GtkTreeView-vertical-separator: 4;
+}
+
+#gnc-id-main-window treeview.view,
+#gnc-id-tree-view.view {
+  background-color: @gnc_paper;
+  color: @gnc_ink;
+}
+
+#gnc-id-main-window treeview.view header button {
+  background-color: @gnc_paper;
+  background-image: none;
+  border: none;
+  border-bottom: 1px solid @gnc_rule;
+  color: @gnc_ink_soft;
+  font-size: 0.86em;
+  font-weight: 600;
+  padding: 6px 8px;
+}
+
+#gnc-id-main-window treeview.view header button:hover {
+  color: @gnc_ink;
+}
+
+treeview.view:selected,
+treeview.view:selected:focus,
+treeview.view:selected:backdrop {
+  background-color: @gnc_forest;
+  color: @gnc_on_accent;
+}
+
+treeview.view:hover:not(:selected) {
+  background-color: alpha(@gnc_forest, 0.05);
+}
+
+treeview.view.expander {
+  color: alpha(@gnc_ink_soft, 0.8);
+}
+
+treeview.view.expander:selected {
+  color: @gnc_on_accent;
+}
+
+/* ------------------------------------------------------------------ */
+/* Controls                                                            */
+
+button.suggested-action {
+  background-color: @gnc_forest;
+  background-image: none;
+  border-color: @gnc_forest_deep;
+  color: @gnc_on_accent;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+button.suggested-action:hover {
+  background-color: @gnc_forest_deep;
+}
+
+button.suggested-action:disabled {
+  background-color: alpha(@gnc_forest, 0.35);
+  border-color: transparent;
+  color: alpha(@gnc_on_accent, 0.8);
+}
+
+button.suggested-action:disabled label {
+  color: alpha(@gnc_on_accent, 0.85);
+}
+
+button.destructive-action {
+  background-color: @gnc_coral_ink;
+  background-image: none;
+  border-color: shade(@gnc_coral_ink, 0.85);
+  color: #ffffff;
+  text-shadow: none;
+}
+
+check:checked,
+radio:checked,
+check:indeterminate {
+  background-color: @gnc_forest;
+  background-image: none;
+  border-color: @gnc_forest_deep;
+  color: @gnc_on_accent;
+}
+
+switch:checked {
+  background-color: @gnc_forest;
+  border-color: @gnc_forest_deep;
+}
+
+entry:focus,
+spinbutton:focus {
+  border-color: @gnc_forest;
+  box-shadow: inset 0 0 0 1px @gnc_forest;
+}
+
+entry selection,
+label selection,
+textview text selection {
+  background-color: alpha(@gnc_forest, 0.75);
+  color: @gnc_on_accent;
+}
+
+progressbar progress,
+scale highlight,
+levelbar block.filled {
+  background-color: @gnc_forest;
+  background-image: none;
+  border-color: @gnc_forest_deep;
+}
+
+menu menuitem:hover,
+.menu menuitem:hover,
+popover.menu modelbutton:hover {
+  background-color: @gnc_forest;
+  color: @gnc_on_accent;
 }
 
 /* Register Cursor settings, top, right, bottom, left */
@@ -22,13 +288,22 @@ gnc-id-cursor button {
   margin: 1px 1px 1px 1px;
 }
 
-/* Register defaults */
-@define-color register_header_bg_color #96B183;
-@define-color register_primary_bg_color #BFDEB9;
-@define-color register_secondary_bg_color #F6FFDA;
-@define-color register_split_bg_color #EDE7D3;
-@define-color register_cursor_bg_color #FFEF98;
-@define-color register_fg_color black;
+
+/* ------------------------------------------------------------------ */
+/* The register                                                        */
+
+/* Paper rows alternating with a faint warm band; the open
+   transaction is lit in amber, its splits sit on parchment. */
+@define-color register_header_bg_color #e2e8de;
+@define-color register_primary_bg_color #fffdf3;
+@define-color register_secondary_bg_color #f6f1dc;
+@define-color register_split_bg_color #efeadb;
+@define-color register_cursor_bg_color #f7e2a6;
+@define-color register_fg_color #171d1b;
+
+gnc-id-sheet {
+  font-feature-settings: "tnum";
+}
 
 *.gnc-class-register-foreground {
   color: @register_fg_color;
@@ -36,6 +311,7 @@ gnc-id-cursor button {
 
 *.gnc-class-register-header {
   background-color: @register_header_bg_color;
+  color: @gnc_slate;
 }
 
 *.gnc-class-register-primary {
@@ -81,7 +357,8 @@ gnc-id-cursor button {
 
 /* Highlight some text */
 .gnc-class-highlight {
-  color: blue;
+  color: @gnc_forest;
+  font-weight: 600;
 }
 
 /* Some tweaks for the about dialog */
@@ -92,12 +369,294 @@ dialog#GnuCash > box > box > label
 
 /* Setting the Textview background for light and dark themes */
 .gnc-class-textview * {
-  background-color: rgb(246,245,244);
+  background-color: @gnc_paper;
 }
 .gnc-class-textview-dark * {
-  background-color: rgb(53,53,53);
+  background-color: rgb(40,46,44);
 }
 dialog#GnuCash * text selection {
-  background-color: rgb(27,106,203);
+  background-color: @gnc_forest;
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Bank Feeds and VAT Returns                                          */
+
+.gnc-online-window,
+.gnc-online-window > box,
+.gnc-online-window stack,
+.gnc-online-window scrolledwindow,
+.gnc-online-window viewport {
+  background-color: @gnc_paper_warm;
+  color: @gnc_ink;
+}
+
+.gnc-online-window headerbar {
+  background-color: @gnc_parchment;
+  background-image: none;
+  border-bottom: 1px solid @gnc_rule;
+  box-shadow: none;
+}
+
+.gnc-online-window headerbar .title {
+  font-family: "Inknut Antiqua", "Merriweather", "Source Serif 4", "DejaVu Serif", serif;
+  font-weight: 600;
+}
+
+.gnc-online-window stackswitcher button {
+  padding: 4px 14px;
+}
+
+.gnc-online-window stackswitcher button:checked {
+  background-color: @gnc_forest;
+  background-image: none;
+  border-color: @gnc_forest_deep;
+  color: @gnc_on_accent;
+  box-shadow: none;
+}
+
+.gnc-online-page {
+  padding: 28px 36px;
+}
+
+.gnc-online-title {
+  font-family: "Inknut Antiqua", "Merriweather", "Source Serif 4", "DejaVu Serif", serif;
+  font-size: 1.55em;
+  font-weight: 600;
+  color: @gnc_ink;
+}
+
+.gnc-online-subtitle {
+  font-size: 1.08em;
+  font-weight: 600;
+  color: @gnc_ink;
+}
+
+.gnc-online-muted {
+  color: @gnc_ink_soft;
+}
+
+.gnc-online-strong {
+  font-weight: 600;
+}
+
+.gnc-online-card {
+  background-color: @gnc_paper;
+  border: 1px solid @gnc_rule;
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+
+.gnc-online-empty {
+  border-style: dashed;
+  border-color: alpha(@gnc_slate, 0.45);
+  padding: 26px 24px;
+}
+
+.gnc-online-pill {
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 0.8em;
+  font-weight: 600;
+  background-color: alpha(@gnc_slate, 0.12);
+  color: @gnc_slate;
+}
+
+.gnc-online-pill.open      { background-color: alpha(@gnc_forest, 0.14); color: @gnc_forest_deep; }
+.gnc-online-pill.filed     { background-color: alpha(@gnc_slate, 0.12); color: @gnc_slate; }
+.gnc-online-pill.overdue   { background-color: alpha(@gnc_coral, 0.18); color: @gnc_coral_ink; }
+.gnc-online-pill.sandbox   { background-color: @gnc_amber; color: #6b5310; }
+.gnc-online-pill.preview   { background-color: alpha(@gnc_slate, 0.12); color: @gnc_slate; }
+
+.gnc-online-amount,
+.gnc-online-figure {
+  font-family: "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-feature-settings: "tnum";
+}
+
+.gnc-online-amount {
+  font-size: 1.12em;
+}
+
+.gnc-online-hero {
+  padding: 4px 0 6px 0;
+}
+
+.gnc-online-hero-amount {
+  font-family: "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-size: 2.6em;
+  font-weight: 300;
+  color: @gnc_ink;
+}
+
+.gnc-online-hero-amount.repayment {
+  color: @gnc_forest;
+}
+
+.gnc-online-warning {
+  background-color: alpha(@gnc_coral, 0.08);
+  border-left: 3px solid @gnc_coral;
+  border-radius: 0 6px 6px 0;
+  padding: 12px 16px;
+}
+
+.gnc-online-boxes {
+  background-color: @gnc_paper;
+  border: 1px solid @gnc_rule;
+  border-radius: 8px;
+}
+
+.gnc-online-box-row {
+  padding: 12px 18px;
+  border-bottom: 1px solid alpha(@gnc_rule, 0.6);
+}
+
+.gnc-online-box-row:last-child {
+  border-bottom: none;
+}
+
+.gnc-online-box-row:hover {
+  background-color: alpha(@gnc_forest, 0.04);
+}
+
+.gnc-online-box-row.total {
+  background-color: @gnc_paper_warm;
+}
+
+.gnc-online-box-row.total label {
+  font-weight: 600;
+}
+
+.gnc-online-box-row.total label.gnc-online-muted {
+  font-weight: normal;
+}
+
+.gnc-online-box-number {
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 999px;
+  background-color: alpha(@gnc_forest, 0.12);
+  color: @gnc_forest_deep;
+  font-family: "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.gnc-online-box-row.total .gnc-online-box-number {
+  background-color: @gnc_forest;
+  color: @gnc_on_accent;
+}
+
+.gnc-online-lines {
+  margin: 10px 0 2px 40px;
+  font-size: 0.92em;
+}
+
+.gnc-online-declaration {
+  background-color: @gnc_paper;
+  border-color: alpha(@gnc_forest, 0.4);
+}
+
+.gnc-online-sidebar {
+  background-color: @gnc_parchment;
+  border-right: 1px solid @gnc_rule;
+}
+
+.gnc-online-sidebar-head {
+  padding: 18px 12px 10px 18px;
+}
+
+.gnc-online-sidebar-foot {
+  padding: 14px 18px 18px 18px;
+  border-top: 1px solid @gnc_rule;
+}
+
+.gnc-online-sidebar list,
+.gnc-online-list {
+  background-color: transparent;
+}
+
+.gnc-online-list row {
+  padding: 10px 18px;
+  border-left: 3px solid transparent;
+}
+
+.gnc-online-list row:selected {
+  background-color: @gnc_paper;
+  border-left-color: @gnc_forest;
+  color: @gnc_ink;
+}
+
+.gnc-online-list row:selected label {
+  color: @gnc_ink;
+}
+
+.gnc-online-list row:selected .gnc-online-muted {
+  color: @gnc_ink_soft;
+}
+
+.gnc-online-field-label {
+  color: @gnc_ink_soft;
+}
+
+.gnc-online-status {
+  font-weight: 600;
+  color: @gnc_forest_deep;
+}
+
+.gnc-online-monogram {
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 10px;
+  background-color: @gnc_slate;
+  color: @gnc_paper;
+  font-family: "Inknut Antiqua", "Merriweather", "DejaVu Serif", serif;
+  font-size: 1.25em;
+  font-weight: 600;
+}
+
+.gnc-online-accounts {
+  margin-top: 10px;
+}
+
+.gnc-online-column-head {
+  color: @gnc_ink_soft;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+.gnc-online-ok {
+  color: @gnc_forest;
+}
+
+.gnc-online-attention {
+  color: @gnc_coral_ink;
+}
+
+.gnc-online-footer {
+  background-color: @gnc_parchment;
+  border-top: 1px solid @gnc_rule;
+  padding: 8px 18px;
+}
+
+.gnc-online-webflow-bar {
+  background-color: @gnc_parchment;
+  border-bottom: 1px solid @gnc_rule;
+  padding: 10px 16px;
+}
+
+.gnc-online-address {
+  font-family: "Roboto Mono", "DejaVu Sans Mono", monospace;
+  font-size: 0.85em;
+  color: @gnc_forest_deep;
+}
+
+.gnc-online-busy {
+  background-color: @gnc_paper;
+  border: 1px solid @gnc_rule;
+  border-radius: 10px;
+}
+
+.gnc-online-mapping {
+  background-color: @gnc_paper;
+}

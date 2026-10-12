@@ -117,6 +117,9 @@
 /* System has libsecret 0.18 or better */
 #cmakedefine HAVE_LIBSECRET 1
 
+/* Bank feeds and the HMRC MTD bridge */
+#cmakedefine HAVE_ONLINE_SERVICES 1
+
 /* Define to 1 if you have the <limits.h> header file. */
 #cmakedefine HAVE_LIMITS_H 1
 
