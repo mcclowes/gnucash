@@ -407,6 +407,8 @@ dialog#GnuCash * text selection {
   padding: 4px 14px;
 }
 
+.gnc-online-window .linked > button:checked,
+.gnc-online-window .linked > radiobutton:checked,
 .gnc-online-window stackswitcher button:checked {
   background-color: @gnc_forest;
   background-image: none;

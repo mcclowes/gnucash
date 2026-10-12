@@ -611,9 +611,9 @@ build_mapping_page (MtdWindow* mw)
     gtk_box_pack_start (GTK_BOX (page), ui::heading (_("Which accounts feed which box")), FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), ui::muted (
         _("Tick an account to send it to a box; its sub-accounts follow (shown as a dash). "
-          "Give one account both 1 and 4 if you keep a single VAT account: credits go to "
-          "Box 1, debits to Box 4. Mark the account you pay HMRC from so those payments "
-          "stay out of the return.")), FALSE, FALSE, 0);
+          "Give one account both 1 and 4 if you keep a single VAT account; credit notes "
+          "are recognised and reduce the right box. Mark the account you settle with HMRC "
+          "so those payments stay out of the return.")), FALSE, FALSE, 0);
 
     std::vector<GType> types (MAP_N_COLUMNS, G_TYPE_BOOLEAN);
     types[MAP_NAME] = types[MAP_GUID] = types[MAP_TYPE] = G_TYPE_STRING;
@@ -678,6 +678,14 @@ build_mapping_page (MtdWindow* mw)
 
 /* ---------------------------------------------------------------- */
 /* Returns page                                                      */
+
+/** An HMRC decimal ("4046.72") in the user's money format. */
+std::string
+pounds (const std::string& decimal)
+{
+    auto n = online::parse_decimal (decimal);
+    return n ? ui::money (*n) : decimal;
+}
 
 std::string
 period_title (const std::string& start, const std::string& end)
@@ -1270,13 +1278,15 @@ on_fetch_account (GtkButton*, MtdWindow* mw)
         return;
     std::string text;
     for (const auto& l : result->first)
-        text += "• " + period_title (l.from, l.to) + ": " + l.type + ", £" +
-                l.original_amount + _(" (outstanding £") + l.outstanding_amount + ")\n";
+        text += "• " + period_title (l.from, l.to) + ": " + l.type + ", " +
+                ui::format (_("%s (outstanding %s)"), pounds (l.original_amount).c_str (),
+                            pounds (l.outstanding_amount).c_str ()) + "\n";
     if (result->first.empty ())
         text += _("No liabilities in the last year.\n");
     text += "\n";
     for (const auto& p : result->second)
-        text += "• " + ui::human_date (p.received) + ": £" + p.amount + _(" received\n");
+        text += "• " + ui::human_date (p.received) + ": " +
+                ui::format (_("%s received"), pounds (p.amount).c_str ()) + "\n";
     if (result->second.empty ())
         text += _("No payments in the last year.");
     ui::show_info (win (mw), _("Your VAT account with HMRC"), text);
@@ -1298,16 +1308,30 @@ rebuild_filed (MtdWindow* mw)
 
     auto filings = vat::load_filings (mw->book);
     if (filings.empty ())
-        gtk_box_pack_start (GTK_BOX (mw->filed_box), ui::muted (_("Nothing filed from this book yet.")), FALSE, FALSE, 0);
+    {
+        auto empty = ui::card ();
+        ui::add_class (empty, "gnc-online-empty");
+        gtk_box_pack_start (GTK_BOX (empty), ui::heading (_("Nothing filed from this book yet"), "gnc-online-subtitle"), FALSE, FALSE, 0);
+        gtk_box_pack_start (GTK_BOX (empty), ui::muted (
+            _("When you file a return, HMRC's receipt appears here: the form bundle number, "
+              "charge reference and the time HMRC received it.")), FALSE, FALSE, 0);
+        gtk_box_pack_start (GTK_BOX (mw->filed_box), empty, FALSE, FALSE, 0);
+    }
     for (auto it = filings.rbegin (); it != filings.rend (); ++it)
     {
         const auto& f = *it;
         auto c = ui::card ();
         auto top = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
         gtk_box_pack_start (GTK_BOX (top), ui::heading (period_title (f.start, f.end), "gnc-online-subtitle"), TRUE, TRUE, 0);
-        auto net = gtk_label_new (("£" + f.payload.net_vat_due).c_str ());
+        auto net_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+        auto net = gtk_label_new (pounds (f.payload.net_vat_due).c_str ());
+        gtk_label_set_xalign (GTK_LABEL (net), 1.0);
         ui::add_class (net, "gnc-online-amount");
-        gtk_box_pack_end (GTK_BOX (top), net, FALSE, FALSE, 0);
+        auto net_label = ui::muted (_("Net VAT (Box 5)"), false);
+        gtk_label_set_xalign (GTK_LABEL (net_label), 1.0);
+        gtk_box_pack_start (GTK_BOX (net_box), net, FALSE, FALSE, 0);
+        gtk_box_pack_start (GTK_BOX (net_box), net_label, FALSE, FALSE, 0);
+        gtk_box_pack_end (GTK_BOX (top), net_box, FALSE, FALSE, 0);
         gtk_box_pack_start (GTK_BOX (c), top, FALSE, FALSE, 0);
         std::string meta = std::string (_("Filed ")) + ui::human_date (static_cast<time64> (f.submitted_at)) +
             "  ·  " + _("Form bundle ") + f.receipt.form_bundle_number;
