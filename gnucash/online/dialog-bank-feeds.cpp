@@ -64,10 +64,25 @@ struct FeedsWindow
     GtkWidget* pending = nullptr;
     QofBook* book = nullptr;
     gint component_id = 0;
+    guint rebuild_idle = 0;
     std::unique_ptr<online::HttpTransport> http;
 };
 
 void rebuild (FeedsWindow* fw);
+
+/** Rebuild once the current signal has finished, at most once. */
+void
+queue_rebuild (FeedsWindow* fw)
+{
+    if (fw->rebuild_idle)
+        return;
+    fw->rebuild_idle = g_idle_add ([](gpointer data) -> gboolean {
+        auto fw = static_cast<FeedsWindow*> (data);
+        fw->rebuild_idle = 0;
+        rebuild (fw);
+        return G_SOURCE_REMOVE;
+    }, fw);
+}
 
 std::string
 trim (const std::string& s)
@@ -454,12 +469,36 @@ sync_connections (GtkWindow* parent, QofBook* book, online::HttpTransport& http,
             continue;
         }
 
+        auto imported = feeds::imported_index (book, *conn);
+        auto describe = [](Split* split) {
+            auto t = xaccSplitGetParent (split);
+            return ui::human_date (xaccTransGetDate (t)) + "  " + xaccTransGetDescription (t);
+        };
         auto consider = [&](const plaid::Transaction& t, bool modified) {
-            if (feeds::find_imported_split (book, *conn, t.transaction_id))
+            if (auto it = imported.find (t.transaction_id); it != imported.end ())
             {
-                (modified ? summary.modified : summary.already)++;
+                if (modified)
+                {
+                    summary.modified++;
+                    summary.modified_imported.push_back (describe (it->second));
+                }
+                else
+                    summary.already++;
                 return;
             }
+            // A pending row imported earlier has now posted under a new
+            // id: adopt the new id rather than importing it twice.
+            if (!t.pending_transaction_id.empty ())
+                if (auto it = imported.find (t.pending_transaction_id); it != imported.end ())
+                {
+                    auto trans = xaccSplitGetParent (it->second);
+                    xaccTransBeginEdit (trans);
+                    xaccSplitSetOnlineID (it->second, t.transaction_id.c_str ());
+                    xaccTransCommitEdit (trans);
+                    imported.emplace (t.transaction_id, it->second);
+                    summary.already++;
+                    return;
+                }
             feeds::Skip why;
             auto trans = feeds::build_transaction (book, *conn, t, include_pending, why);
             switch (why)
@@ -474,13 +513,14 @@ sync_connections (GtkWindow* parent, QofBook* book, online::HttpTransport& http,
             consider (t, false);
         for (const auto& t : f.sync.modified)
             consider (t, true);
+        // Posted rows adopt their pending twin's id above, so the
+        // pending id the bank withdraws no longer matches anything.
         for (const auto& id : f.sync.removed)
-            if (auto split = feeds::find_imported_split (book, *conn, id))
+            if (auto it = imported.find (id); it != imported.end () &&
+                xaccSplitGetOnlineID (it->second) && id == xaccSplitGetOnlineID (it->second))
             {
                 summary.removed++;
-                auto t = xaccSplitGetParent (split);
-                summary.removed_imported.push_back (ui::human_date (xaccTransGetDate (t)) + "  " +
-                                                    xaccTransGetDescription (t));
+                summary.removed_imported.push_back (describe (it->second));
             }
         new_cursors.emplace_back (conn, f.sync.next_cursor);
     }
@@ -533,6 +573,13 @@ sync_connections (GtkWindow* parent, QofBook* book, online::HttpTransport& http,
         report += ui::format (ngettext ("%d transaction was in a different currency from its account and was left out.\n",
                                         "%d transactions were in a different currency from their account and were left out.\n",
                                         summary.currency), summary.currency);
+    if (!summary.modified_imported.empty ())
+    {
+        report += _("\nThe bank changed these transactions after they were imported. Check the amount and date:");
+        for (const auto& m : summary.modified_imported)
+            report += "\n  • " + m;
+        report += "\n";
+    }
     if (!summary.removed_imported.empty ())
     {
         report += _("\nThe bank withdrew these transactions, which are already in GnuCash. Check them:");
@@ -700,10 +747,7 @@ on_account_changed (GNCAccountSel* gas, FeedsWindow* fw)
         la->ignore = false;
     store.save (fw->book);
     // Rebuild later: we're inside the selector's own signal.
-    g_idle_add ([](gpointer data) -> gboolean {
-        rebuild (static_cast<FeedsWindow*> (data));
-        return G_SOURCE_REMOVE;
-    }, fw);
+    queue_rebuild (fw);
 }
 
 void
@@ -720,10 +764,7 @@ on_import_switched (GObject* sw, GParamSpec*, FeedsWindow* fw)
         la->ignore = !gtk_switch_get_active (GTK_SWITCH (sw));
         store.save (fw->book);
     }
-    g_idle_add ([](gpointer data) -> gboolean {
-        rebuild (static_cast<FeedsWindow*> (data));
-        return G_SOURCE_REMOVE;
-    }, fw);
+    queue_rebuild (fw);
 }
 
 void
@@ -979,7 +1020,8 @@ void
 on_destroy (GtkWidget*, FeedsWindow* fw)
 {
     gnc_unregister_gui_component (fw->component_id);
-    g_idle_remove_by_data (fw);
+    if (fw->rebuild_idle)
+        g_source_remove (fw->rebuild_idle);
     for (auto group : fw->columns)
         g_object_unref (group);
     delete fw;
@@ -1034,9 +1076,9 @@ gnc_ui_bank_feeds_dialog (GtkWindow* parent)
                           gtk_image_new_from_icon_name ("open-menu-symbolic", GTK_ICON_SIZE_BUTTON));
     auto menu = gtk_menu_new ();
     auto keys = gtk_menu_item_new_with_mnemonic (_("Plaid _Keys…"));
-    g_signal_connect_swapped (keys, "activate", G_CALLBACK (on_keys), fw);
+    g_signal_connect (keys, "activate", G_CALLBACK (on_keys), fw);
     auto test = gtk_menu_item_new_with_mnemonic (_("Add a Sandbox _Test Bank"));
-    g_signal_connect_swapped (test, "activate", G_CALLBACK (on_sandbox_bank), fw);
+    g_signal_connect (test, "activate", G_CALLBACK (on_sandbox_bank), fw);
     auto history = gtk_menu_item_new_with_mnemonic (_("Download Full _History Again…"));
     g_signal_connect (history, "activate", G_CALLBACK (on_resync_history), fw);
     gtk_menu_shell_append (GTK_MENU_SHELL (menu), keys);

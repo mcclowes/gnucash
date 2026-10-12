@@ -38,6 +38,7 @@
 #include <qofbook.h>
 
 #include <optional>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -105,12 +106,17 @@ enum class Skip { None, Pending, Unmapped, Ignored, Currency, BadData };
 /** Find a split already imported from feed transaction @a id. */
 Split* find_imported_split (QofBook* book, const Connection& c, const std::string& id);
 
+/** Every imported split in @a c's accounts, by online id, built once
+ *  per sync rather than searched per row. */
+std::unordered_map<std::string, Split*> imported_index (QofBook* book, const Connection& c);
+
 /** A summary of what a sync will do, for the confirmation line. */
 struct SyncSummary
 {
     int added = 0, pending = 0, unmapped = 0, currency = 0;
     int modified = 0, removed = 0, already = 0;
-    std::vector<std::string> removed_imported; ///< descriptions to review
+    std::vector<std::string> removed_imported;  ///< descriptions to review
+    std::vector<std::string> modified_imported; ///< changed by the bank after import
 };
 
 } // namespace gnc::feeds

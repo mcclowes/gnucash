@@ -88,10 +88,17 @@ run_in_background (GtkWindow* parent, const std::string& message,
     std::exception_ptr error;
 
     // Defer showing the popup so quick calls don't flash a window.
-    auto show_id = g_timeout_add (250, [](gpointer w) -> gboolean {
-        gtk_widget_show_all (GTK_WIDGET (w));
+    // Grab input at once, so nothing can close the caller's window or
+    // start a second request; only the popup's appearance is deferred.
+    gtk_widget_realize (popup);
+    gtk_grab_add (popup);
+    struct Deferred { GtkWidget* popup; guint id; } deferred{popup, 0};
+    deferred.id = g_timeout_add (250, [](gpointer d) -> gboolean {
+        auto deferred = static_cast<Deferred*> (d);
+        deferred->id = 0;
+        gtk_widget_show_all (deferred->popup);
         return G_SOURCE_REMOVE;
-    }, popup);
+    }, &deferred);
 
     if (parent)
     {
@@ -111,12 +118,14 @@ run_in_background (GtkWindow* parent, const std::string& message,
         g_idle_add (background_finished, &state);
     });
 
-    if (!state.done)
-        g_main_loop_run (state.loop);
+    // Always run: only this thread dispatches the idle that ends the
+    // loop, so it must be consumed here even if the work was instant.
+    g_main_loop_run (state.loop);
     worker.join ();
 
-    g_source_remove_by_user_data (popup);
-    (void) show_id;
+    if (deferred.id)
+        g_source_remove (deferred.id);
+    gtk_grab_remove (popup);
     gtk_widget_destroy (popup);
     g_main_loop_unref (state.loop);
     if (parent && gtk_widget_get_window (GTK_WIDGET (parent)))

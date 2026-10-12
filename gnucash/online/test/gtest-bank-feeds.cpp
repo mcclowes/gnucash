@@ -136,6 +136,11 @@ TEST_F (BankFeeds, finds_previously_imported_rows)
     ASSERT_NE (nullptr, found);
     EXPECT_EQ (card, xaccSplitGetAccount (found));
     EXPECT_EQ (nullptr, find_imported_split (book, conn, "tx-nope"));
+
+    auto index = imported_index (book, conn);
+    ASSERT_EQ (1u, index.count ("tx-9"));
+    EXPECT_EQ (found, index["tx-9"]);
+    EXPECT_EQ (0u, index.count ("tx-nope"));
 }
 
 TEST_F (BankFeeds, store_round_trips_and_merges_accounts)

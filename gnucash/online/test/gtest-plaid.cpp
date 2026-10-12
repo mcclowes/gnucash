@@ -78,7 +78,7 @@ TEST (Plaid, sync_follows_pages_and_returns_final_cursor)
         {"transaction_id":"t1","account_id":"a1","amount":12.5,"iso_currency_code":"GBP","date":"2026-10-01","name":"TESCO STORES 3297","merchant_name":"Tesco","pending":false,"personal_finance_category":{"primary":"FOOD_AND_DRINK"}}],
         "modified":[],"removed":[],"next_cursor":"c1","has_more":true,"transactions_update_status":"HISTORICAL_UPDATE_COMPLETE"})");
     t.reply ("/transactions/sync", 200, R"({"added":[
-        {"transaction_id":"t2","account_id":"a1","amount":-2500,"iso_currency_code":"GBP","date":"2026-10-02","name":"ACME LTD SALARY","merchant_name":null,"pending":false}],
+        {"transaction_id":"t2","account_id":"a1","amount":-2500,"iso_currency_code":"GBP","date":"2026-10-02","name":"ACME LTD SALARY","merchant_name":null,"pending":false,"pending_transaction_id":"p2"}],
         "modified":[{"transaction_id":"t0","account_id":"a1","amount":3,"date":"2026-09-30","name":"x"}],
         "removed":[{"transaction_id":"t-old"}],"next_cursor":"c2","has_more":false})");
 
@@ -89,6 +89,8 @@ TEST (Plaid, sync_follows_pages_and_returns_final_cursor)
     EXPECT_EQ ("FOOD_AND_DRINK", r.added[0].category);
     EXPECT_EQ ("-2500", r.added[1].amount);
     EXPECT_EQ ("", r.added[1].merchant_name);
+    EXPECT_EQ ("p2", r.added[1].pending_transaction_id);
+    EXPECT_EQ ("", r.added[0].pending_transaction_id);
     ASSERT_EQ (1u, r.modified.size ());
     ASSERT_EQ (1u, r.removed.size ());
     EXPECT_EQ ("t-old", r.removed[0]);

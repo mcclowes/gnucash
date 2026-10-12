@@ -79,6 +79,8 @@ struct Transaction
     std::string authorized_date;
     std::string name, merchant_name, category;
     bool pending = false;
+    /** For a posted transaction, the id it had while pending. */
+    std::string pending_transaction_id;
 };
 
 struct SyncResult

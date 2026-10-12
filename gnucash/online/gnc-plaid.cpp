@@ -257,6 +257,7 @@ parse_transaction (const json::Value& t)
     out.merchant_name = t.get_string ("merchant_name");
     out.category = t["personal_finance_category"].get_string ("primary");
     out.pending = t.get_bool ("pending");
+    out.pending_transaction_id = t.get_string ("pending_transaction_id");
     return out;
 }
 

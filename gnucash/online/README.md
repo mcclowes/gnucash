@@ -38,21 +38,34 @@ Accounts are assigned to boxes on the *VAT Boxes* page; sub-accounts
 follow their parent. For a period, on the accruals basis:
 
 - **Box 1, Box 2** count credits as positive. **Box 4** counts debits.
-  Giving one account both Box 1 and Box 4 splits it: credits to 1,
-  debits to 4. That suits books with a single "VAT" account.
-- **Box 6, Box 8** count credits; **Box 7, Box 9** count debits. They
-  are truncated to whole pounds.
+- One account may hold both sides (Box 1 or 2, plus Box 4), for books
+  with a single "VAT" account. Each split then goes by what its
+  transaction is doing: a customer credit note (income debited) reduces
+  Box 1, a supplier credit note (expense credited) reduces Box 4, and
+  otherwise credits go to Box 1 or 2 and debits to Box 4. A Northern
+  Ireland reverse charge in one account therefore fills Box 2 and Box 4.
+- **Box 6, Box 8** count credits; **Box 7, Box 9** count debits. Box 6
+  includes Box 8 and Box 7 includes Box 9, as HMRC requires. They are
+  truncated to whole pounds.
 - **Box 3** = Box 1 + Box 2. **Box 5** = |Box 3 − Box 4|.
 - Transactions that settle with HMRC are left out: anything touching the
   settlement account, the journal GnuCash posts when filing, and anything
-  that moves money only between VAT accounts and bank, cash or card
-  accounts. Excluded transactions are listed in the window, never
+  that moves money only between *output* VAT accounts and bank, cash or
+  card accounts. Input VAT paid straight from the bank (import VAT on a
+  C79, say) still counts. Excluded transactions are listed in the window, never
   dropped silently.
 - **Flat Rate Scheme**: Box 6 becomes gross turnover and Box 1 is that
   times the flat rate, to the penny.
 
 Every figure opens to show the transactions behind it. Nothing is sent
-until the user ticks HMRC's declaration and presses *File*. The receipt
+until the user ticks HMRC's declaration and presses *File*. The return
+is worked out again at that moment; if the book has changed since it
+was shown, nothing is sent and the new figures are put up for review.
+
+If HMRC accepted a filing but the reply never arrived, the retry comes
+back as a duplicate. GnuCash then fetches HMRC's copy of the return,
+records it under *Filed*, and says whether it matches the book. It does
+not post a settlement journal in that case. The receipt
 (form bundle number, charge reference, `Receipt-ID`, correlation id,
 timestamp and signature) is stored in the book under *Filed*.
 
@@ -82,7 +95,11 @@ UUID kept in the user data directory), OS user, time zone, local IPs with
 timestamp, MAC addresses, screens, window size, OS and device details, and
 the vendor product name and version. Headers it cannot honestly fill are
 omitted rather than sent blank. `Gov-Client-Multi-Factor` and
-`Gov-Vendor-License-IDs` are always omitted, because GnuCash has neither.
+`Gov-Vendor-License-IDs` are always omitted, because GnuCash has
+neither. HMRC's validator may flag the missing licence header, and
+device manufacturer and model are only read on Linux. Run *Check fraud
+prevention headers* in the sandbox and settle any gaps with HMRC before
+asking for production credentials.
 
 ## Setting up bank feeds
 
@@ -104,6 +121,12 @@ review loses nothing. Pending card transactions are skipped by default;
 they arrive when they clear. *Download Full History Again…* resets the
 cursor to recover anything skipped in an earlier review; transactions
 already in the book are recognised and left alone.
+
+With pending transactions switched on, a pending row that later posts
+keeps its place: the imported split takes the posted transaction's id
+instead of being imported twice. Changes the bank makes to rows already
+imported, and rows it withdraws, are listed after each sync for you to
+check; GnuCash does not edit imported transactions itself.
 
 Each connection card compares the bank's balance with the book's, which
 is the quickest check that nothing has been missed.

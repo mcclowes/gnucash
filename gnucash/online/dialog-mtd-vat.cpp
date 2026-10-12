@@ -222,7 +222,9 @@ read_connection_form (MtdWindow* mw)
     auto& cfg = mw->session->config ();
     cfg.client_id = trim (gtk_entry_get_text (GTK_ENTRY (mw->client_id)));
     cfg.client_secret = gtk_entry_get_text (GTK_ENTRY (mw->client_secret));
-    cfg.redirect_uri = gtk_entry_get_text (GTK_ENTRY (mw->redirect_uri));
+    cfg.redirect_uri = trim (gtk_entry_get_text (GTK_ENTRY (mw->redirect_uri)));
+    if (cfg.redirect_uri.empty ())
+        cfg.redirect_uri = hmrc::Config{}.redirect_uri;
     std::string vrn = gtk_entry_get_text (GTK_ENTRY (mw->vrn));
     vrn.erase (std::remove_if (vrn.begin (), vrn.end (),
                                [](unsigned char c) { return !std::isdigit (c); }),
@@ -819,7 +821,20 @@ on_submit (GtkButton*, MtdWindow* mw)
     if (!mw->current)
         return;
     auto ob = *mw->current;
-    auto payload = mw->computed.payload (ob.period_key);
+    // File what the book says now, not what it said when the period
+    // was first shown: the registers may have changed since.
+    auto shown = mw->computed.payload (ob.period_key);
+    auto fresh = vat::compute (mw->book, mw->settings, vat::parse_date (ob.start, false),
+                               vat::parse_date (ob.end, true));
+    auto payload = fresh.payload (ob.period_key);
+    if (payload.to_json ().dump () != shown.to_json ().dump ())
+    {
+        rebuild_detail (mw);
+        ui::show_info (win (mw), _("The figures have changed"),
+                       _("Your book has changed since this return was shown. Check the updated "
+                         "figures, then declare and file again."));
+        return;
+    }
     payload.finalised = true;
     if (auto problem = payload.validate (); !problem.empty ())
     {
@@ -827,13 +842,54 @@ on_submit (GtkButton*, MtdWindow* mw)
         return;
     }
     auto vrn = mw->settings.vrn;
-    auto receipt = with_token<hmrc::Receipt> (
+    struct Outcome { hmrc::Receipt receipt; std::optional<hmrc::ReturnPayload> already_filed; };
+    auto outcome = with_token<Outcome> (
         mw, _("Filing your VAT return with HMRC…"),
         [&] (const hmrc::Client& c, const std::string& token) {
-            return c.submit_return (token, vrn, payload);
+            try
+            {
+                return Outcome{c.submit_return (token, vrn, payload), std::nullopt};
+            }
+            catch (const online::OnlineError& e)
+            {
+                // A filing whose reply was lost comes back as a duplicate
+                // on retry; HMRC's copy is the record to keep.
+                if (e.code () != "DUPLICATE_SUBMISSION")
+                    throw;
+                return Outcome{{}, c.view_return (token, vrn, ob.period_key)};
+            }
         });
-    if (!receipt)
+    if (!outcome)
         return;
+
+    if (outcome->already_filed)
+    {
+        vat::Filing f;
+        f.period_key = ob.period_key;
+        f.start = ob.start;
+        f.end = ob.end;
+        f.payload = *outcome->already_filed;
+        f.receipt.processing_date = _("(receipt not received)");
+        f.submitted_at = now ();
+        vat::record_filing (mw->book, f);
+        bool same = f.payload.net_vat_due == payload.net_vat_due &&
+            f.payload.total_vat_due == payload.total_vat_due;
+        ui::show_info (win (mw), _("HMRC already has a return for this period"),
+                       std::string (same ? _("It matches these figures, so it was probably filed from here and the reply was lost. ")
+                                         : _("Its figures differ from these. ")) +
+                       ui::format (_("HMRC holds net VAT of £%s. A record has been added under Filed; "
+                                     "no settlement journal was posted."),
+                                   f.payload.net_vat_due.c_str ()));
+        for (auto& o : mw->obligations)
+            if (o.period_key == ob.period_key)
+                o.status = "F";
+        mw->current->status = "F";
+        rebuild_obligations (mw);
+        rebuild_detail (mw);
+        rebuild_filed (mw);
+        return;
+    }
+    auto receipt = &outcome->receipt;
 
     vat::Filing f;
     f.period_key = ob.period_key;
@@ -844,7 +900,7 @@ on_submit (GtkButton*, MtdWindow* mw)
     f.submitted_at = now ();
     if (mw->journal && gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (mw->journal)))
     {
-        if (auto t = vat::post_settlement_journal (mw->book, mw->settings, mw->computed,
+        if (auto t = vat::post_settlement_journal (mw->book, mw->settings, fresh,
                                                   ob.period_key, vat::parse_date (ob.end, true)))
         {
             char buf[GUID_ENCODING_LENGTH + 1];

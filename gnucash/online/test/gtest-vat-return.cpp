@@ -93,10 +93,60 @@ TEST_F (VatReturn, a_single_vat_account_splits_credits_and_debits)
     single.set_roles (vat, {Role::Box1, Role::Box4});
     auto c = compute (book, single, parse_date ("2026-04-01", false),
                       parse_date ("2026-06-30", true));
-    // Debits (the credit note and the purchases) all land in Box 4 now.
-    EXPECT_EQ ("2000.00", format_pence (c.box[1]));
-    EXPECT_EQ ("136.67", format_pence (c.box[4]));
+    // The customer credit note reduces Box 1 rather than inflating Box 4,
+    // so the answer matches the two-account book exactly.
+    EXPECT_EQ ("1980.00", format_pence (c.box[1]));
+    EXPECT_EQ ("116.67", format_pence (c.box[4]));
     EXPECT_EQ ("1863.33", format_pence (c.box[5]));
+}
+
+TEST_F (VatReturn, single_account_supplier_credit_note_reduces_box_4)
+{
+    Settings single = settings;
+    single.set_roles (vat_output, {});
+    single.set_roles (vat_input, {});
+    single.set_roles (vat, {Role::Box1, Role::Box4});
+    post (2026, 6, 10, "Refund from software vendor", {{bank, 12000}, {software, -10000}, {vat, -2000}});
+    auto c = compute (book, single, parse_date ("2026-04-01", false),
+                      parse_date ("2026-06-30", true));
+    EXPECT_EQ ("1980.00", format_pence (c.box[1]));
+    EXPECT_EQ ("96.67", format_pence (c.box[4]));
+}
+
+TEST_F (VatReturn, reverse_charge_in_one_account_fills_both_boxes)
+{
+    // Northern Ireland acquisition: VAT due and reclaimed in one account.
+    auto ni_vat = add (liabilities, "NI VAT", ACCT_TYPE_LIABILITY);
+    settings.set_roles (ni_vat, {Role::Box2, Role::Box4});
+    post (2026, 5, 20, "Parts from Dublin", {{expenses, 50000}, {ni_vat, 10000},
+                                             {ni_vat, -10000}, {bank, -50000}});
+    auto c = run ();
+    EXPECT_EQ ("100.00", format_pence (c.box[2]));
+    EXPECT_EQ ("216.67", format_pence (c.box[4]));
+    EXPECT_EQ ("2080.00", format_pence (c.box[3]));
+}
+
+TEST_F (VatReturn, import_vat_paid_from_the_bank_is_reclaimed_not_excluded)
+{
+    post (2026, 6, 12, "C79 import VAT", {{vat_input, 4000}, {bank, -4000}});
+    auto c = run ();
+    EXPECT_EQ ("156.67", format_pence (c.box[4]));
+    EXPECT_TRUE (c.excluded.empty ());
+}
+
+TEST_F (VatReturn, box_6_includes_box_8_and_box_7_includes_box_9)
+{
+    auto eu_sales = add (root, "EU Sales", ACCT_TYPE_INCOME);
+    auto eu_buys = add (root, "EU Purchases", ACCT_TYPE_EXPENSE);
+    settings.set_roles (eu_sales, {Role::Box8});
+    settings.set_roles (eu_buys, {Role::Box9});
+    post (2026, 6, 3, "Goods to Dublin", {{bank, 300000}, {eu_sales, -300000}});
+    post (2026, 6, 4, "Goods from Cork", {{eu_buys, 100000}, {bank, -100000}});
+    auto c = run ();
+    EXPECT_EQ ("3000", format_pounds (c.box[8]));
+    EXPECT_EQ ("12901", format_pounds (c.box[6]));
+    EXPECT_EQ ("1000", format_pounds (c.box[9]));
+    EXPECT_EQ ("1583", format_pounds (c.box[7]));
 }
 
 TEST_F (VatReturn, repayment_when_input_exceeds_output)

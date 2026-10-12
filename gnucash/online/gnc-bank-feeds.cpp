@@ -285,6 +285,22 @@ build_transaction (QofBook* book, const Connection& c, const plaid::Transaction&
     return trans;
 }
 
+std::unordered_map<std::string, Split*>
+imported_index (QofBook* book, const Connection& c)
+{
+    std::unordered_map<std::string, Split*> index;
+    for (const auto& la : c.accounts)
+    {
+        auto acc = account_from_guid_string (book, la.gnc_account);
+        if (!acc)
+            continue;
+        for (auto split : xaccAccountGetSplits (acc))
+            if (auto oid = xaccSplitGetOnlineID (split); oid && *oid)
+                index.emplace (oid, split);
+    }
+    return index;
+}
+
 Split*
 find_imported_split (QofBook* book, const Connection& c, const std::string& id)
 {

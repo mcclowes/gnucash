@@ -134,7 +134,7 @@ online_schema ()
         {
             { "service", SECRET_SCHEMA_ATTRIBUTE_STRING },
             { "key", SECRET_SCHEMA_ATTRIBUTE_STRING },
-            { "NULL", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            { nullptr, SECRET_SCHEMA_ATTRIBUTE_STRING },
         },
         0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
     };

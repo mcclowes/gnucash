@@ -26,16 +26,19 @@
  *
  *  - Box 1 and Box 2 (VAT due) count credits as positive; Box 4 (VAT
  *    reclaimed) counts debits as positive. One account may be given to
- *    both Box 1 and Box 4: then its credits feed Box 1 and its debits
- *    Box 4, which suits books that keep a single "VAT" account.
+ *    both Box 1 (or 2) and Box 4, for books that keep a single "VAT"
+ *    account: a split then goes by what its transaction is about, so a
+ *    customer's credit note reduces Box 1 and a supplier's reduces
+ *    Box 4; otherwise credits feed Box 1 and debits Box 4.
  *  - Box 6 and Box 8 (sales) count credits; Box 7 and Box 9
- *    (purchases) count debits. Boxes 6 to 9 are truncated to whole
- *    pounds, as HMRC asks.
+ *    (purchases) count debits. Box 6 includes Box 8 and Box 7 includes
+ *    Box 9, as HMRC requires. Boxes 6 to 9 are truncated to whole
+ *    pounds.
  *  - Box 3 = Box 1 + Box 2; Box 5 = |Box 3 - Box 4|.
  *  - Transactions that settle VAT with HMRC are excluded: any that
  *    touch the settlement account, any journal GnuCash posted when
- *    filing, and any that move money only between VAT accounts and
- *    bank, cash or credit accounts. Excluded transactions are listed,
+ *    filing, and any that move money only between output VAT accounts
+ *    and bank, cash or credit accounts. Excluded transactions are listed,
  *    never silently dropped.
  *  - Under the Flat Rate Scheme, Box 6 is gross turnover (net sales
  *    plus any output VAT recorded) and Box 1 is that turnover times

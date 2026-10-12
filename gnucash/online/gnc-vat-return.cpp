@@ -91,8 +91,8 @@ role_hint (Role r)
     case Role::Box4: return _("Input VAT you paid suppliers.");
     case Role::Box6: return _("Income accounts, net of VAT.");
     case Role::Box7: return _("Expense and asset accounts, net of VAT.");
-    case Role::Box8: return _("Northern Ireland only: goods supplied to the EU.");
-    case Role::Box9: return _("Northern Ireland only: goods acquired from the EU.");
+    case Role::Box8: return _("Northern Ireland only: goods supplied to the EU. Also counted in Box 6.");
+    case Role::Box9: return _("Northern Ireland only: goods acquired from the EU. Also counted in Box 7.");
     case Role::Settlement: return _("Where you pay HMRC or receive refunds.");
     }
     return "";
@@ -411,30 +411,49 @@ compute (QofBook* book, const Settings& settings, time64 start, time64 end)
     for (auto t : txns)
     {
         bool settles = false, has_vat = false, has_pl = false, only_money = true;
+        bool vat_output_only = true;
+        // Which way the earning or spending runs: a customer credit note
+        // debits income; a supplier credit note credits an expense.
+        bool sales_in = false, sales_out = false, spend_in = false, spend_out = false;
         auto journal = qof_instance_get_path_kvp<const char*> (QOF_INSTANCE (t),
                                                               {"online", JOURNAL_SLOT});
         for (auto n = xaccTransGetSplitList (t); n; n = n->next)
         {
             auto acc = xaccSplitGetAccount (static_cast<Split*> (n->data));
             auto it = roles.find (acc);
-            bool vat_here = false;
+            bool vat_here = false, output_here = false;
             if (it != roles.end ())
             {
                 for (auto r : it->second)
                 {
                     if (r == Role::Settlement) settles = true;
                     if (is_vat_role (r)) vat_here = true;
+                    if (r == Role::Box1 || r == Role::Box2) output_here = true;
                     if (box_number (r) >= 6) has_pl = true;
                 }
             }
             has_vat = has_vat || vat_here;
+            if (vat_here && !output_here)
+                vat_output_only = false;
+            bool sales_acc = xaccAccountGetType (acc) == ACCT_TYPE_INCOME ||
+                (it != roles.end () && (it->second.count (Role::Box6) || it->second.count (Role::Box8)));
+            bool spend_acc = xaccAccountGetType (acc) == ACCT_TYPE_EXPENSE ||
+                (it != roles.end () && (it->second.count (Role::Box7) || it->second.count (Role::Box9)));
+            bool debit = gnc_numeric_positive_p (xaccSplitGetAmount (static_cast<Split*> (n->data)));
+            if (sales_acc)
+                (debit ? sales_out : sales_in) = true;
+            if (spend_acc)
+                (debit ? spend_in : spend_out) = true;
             if (is_pl_account (acc))
                 has_pl = true;
             if (!vat_here && !is_money_account (acc))
                 only_money = false;
         }
 
-        bool payment = has_vat && !has_pl && only_money;
+        // Money moving between output VAT and the bank, with nothing
+        // earned or spent, is a payment to (or refund from) HMRC. Input
+        // VAT paid straight from the bank (import VAT, say) is not.
+        bool payment = has_vat && vat_output_only && !has_pl && only_money;
         if (settles || payment || (journal && *journal))
         {
             auto first = xaccTransGetSplit (t, 0);
@@ -453,24 +472,35 @@ compute (QofBook* book, const Settings& settings, time64 start, time64 end)
             const auto& r = it->second;
             auto amount = xaccSplitGetAmount (split);
             auto credit = gnc_numeric_neg (amount);
-            bool single_vat_account = r.count (Role::Box1) && r.count (Role::Box4);
+            int output_box = r.count (Role::Box1) ? 1 : r.count (Role::Box2) ? 2 : 0;
 
-            if (single_vat_account)
+            if (output_box && r.count (Role::Box4))
             {
-                if (gnc_numeric_negative_p (amount))
-                    add (1, t, acc, credit);
+                // One account holds both sides. Route by what the
+                // transaction is about: a credit note to a customer
+                // reduces output VAT, one from a supplier reduces input.
+                bool credit_side = gnc_numeric_negative_p (amount);
+                bool customer_credit_note = sales_out && !sales_in && !spend_in;
+                bool supplier_credit_note = spend_out && !spend_in && !sales_in;
+                if (credit_side && supplier_credit_note)
+                    add (4, t, acc, amount);
+                else if (!credit_side && customer_credit_note)
+                    add (output_box, t, acc, credit);
+                else if (credit_side)
+                    add (output_box, t, acc, credit);
                 else
                     add (4, t, acc, amount);
             }
             else
             {
                 if (r.count (Role::Box1)) add (1, t, acc, credit);
+                if (r.count (Role::Box2)) add (2, t, acc, credit);
                 if (r.count (Role::Box4)) add (4, t, acc, amount);
             }
-            if (r.count (Role::Box2)) add (2, t, acc, credit);
-            if (r.count (Role::Box6)) add (6, t, acc, credit);
+            // HMRC: Box 6 includes Box 8, and Box 7 includes Box 9.
+            if (r.count (Role::Box6) || r.count (Role::Box8)) add (6, t, acc, credit);
             if (r.count (Role::Box8)) add (8, t, acc, credit);
-            if (r.count (Role::Box7)) add (7, t, acc, amount);
+            if (r.count (Role::Box7) || r.count (Role::Box9)) add (7, t, acc, amount);
             if (r.count (Role::Box9)) add (9, t, acc, amount);
         }
     }
