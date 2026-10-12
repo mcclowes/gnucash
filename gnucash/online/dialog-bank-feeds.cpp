@@ -125,8 +125,9 @@ edit_keys (GtkWindow* parent)
     gtk_box_pack_start (GTK_BOX (page), ui::muted (
         _("Plaid links GnuCash to UK banks through Open Banking. Sign up at dashboard.plaid.com, "
           "then paste the client ID and the secret for the environment you want. The sandbox is "
-          "free and has test banks; production needs Plaid's approval. Keys are kept in your "
-          "system keyring.")), FALSE, FALSE, 0);
+          "free and has test banks; production needs Plaid's approval.")), FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), ui::muted (
+        std::string (_("Keys are kept in ")) + secrets.description () + "."), FALSE, FALSE, 0);
 
     auto grid = gtk_grid_new ();
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
@@ -1107,7 +1108,10 @@ gnc_ui_bank_feeds_dialog (GtkWindow* parent)
     gtk_box_pack_start (GTK_BOX (foot), fw->pending, FALSE, FALSE, 0);
     auto where = std::string (_("Keys and access tokens are kept in ")) +
         online::default_secret_store ().description () + ".";
-    gtk_box_pack_end (GTK_BOX (foot), ui::muted (where, false), FALSE, FALSE, 0);
+    auto where_label = ui::muted (where, false);
+    gtk_label_set_ellipsize (GTK_LABEL (where_label), PANGO_ELLIPSIZE_START);
+    gtk_box_pack_end (GTK_BOX (foot), where_label, TRUE, TRUE, 0);
+    gtk_label_set_xalign (GTK_LABEL (where_label), 1.0);
     gtk_box_pack_start (GTK_BOX (outer), foot, FALSE, FALSE, 0);
     gtk_container_add (GTK_CONTAINER (fw->window), outer);
 

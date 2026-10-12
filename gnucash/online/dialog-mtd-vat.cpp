@@ -420,8 +420,11 @@ build_connection_page (MtdWindow* mw)
     gtk_box_pack_start (GTK_BOX (page), ui::muted (
         _("GnuCash talks to HMRC directly, as your own registered application. "
           "Create one at developer.service.hmrc.gov.uk, subscribe it to the VAT (MTD) API, "
-          "and add the redirect address below to it. Your client secret and sign-in are "
-          "kept in your system keyring, never in the book.")), FALSE, FALSE, 0);
+          "and add the redirect address below to it.")), FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), ui::muted (
+        std::string (_("Your client secret and sign-in are kept in ")) +
+        online::default_secret_store ().description () + _(", never in the book.")),
+        FALSE, FALSE, 0);
 
     auto c = ui::card ();
     auto grid = gtk_grid_new ();

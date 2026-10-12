@@ -80,7 +80,7 @@ public:
 
     std::string description () const override
     {
-        return "a private file (" + m_path + ")";
+        return "a private file in your GnuCash data folder";
     }
 
 private:
