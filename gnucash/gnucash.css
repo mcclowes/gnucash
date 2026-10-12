@@ -95,30 +95,50 @@
   margin: 8px 6px;
 }
 
+/* Dialogs and assistants share the window's paper. */
+dialog.background,
+messagedialog.background,
+assistant.background,
+dialog notebook > stack,
+assistant notebook > stack {
+  background-color: @gnc_paper_warm;
+  color: @gnc_ink;
+}
+
+dialog frame > border,
+assistant frame > border {
+  border-color: @gnc_rule;
+}
+
 /* Tabs: a rule under the page in front, nothing else. */
+notebook > header {
+  background-color: @gnc_paper_warm;
+  border-color: @gnc_rule;
+}
+
 #gnc-id-main-window notebook > header {
   background-color: @gnc_paper_warm;
   border-color: @gnc_rule;
 }
 
-#gnc-id-main-window notebook > header tab {
+notebook > header tab {
   padding: 6px 14px;
   min-height: 0;
   color: @gnc_ink_soft;
   box-shadow: none;
 }
 
-#gnc-id-main-window notebook > header tab:hover {
+notebook > header tab:hover {
   color: @gnc_ink;
   box-shadow: inset 0 -2px alpha(@gnc_forest, 0.35);
 }
 
-#gnc-id-main-window notebook > header tab:checked {
+notebook > header tab:checked {
   color: @gnc_ink;
   box-shadow: inset 0 -2px @gnc_forest;
 }
 
-#gnc-id-main-window notebook > header tab:checked label {
+notebook > header tab:checked label {
   font-weight: 600;
 }
 
