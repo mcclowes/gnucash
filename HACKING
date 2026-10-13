@@ -3,6 +3,9 @@ Hacking Guidelines
 
 This document is an introduction to hacking on GnuCash.
 
+For this fork's task catalog and contributor conventions, see
+doc/development.md and AGENTS.md. doc/architecture.md maps source ownership.
+
 Related Documents
 -----------------
 

@@ -1,7 +1,15 @@
-Github Actions Continuous Integration Testing Workflows.
+# CI workflows
 
-ci-tests.yml runs Ubuntu 18.04 and Ubuntu 20.04 using Github-provided virtual environments. The virtual environments are about twice as fast as Docker ones and getting Docker to run Ubuntu images was problematic. Note that updating Ubuntu 18.04 updates ICU4C from v60 to v65 and that causes conflicts with Boost, so don't.
+- `developer-tools.yml` runs the portable task-runner tests on Ubuntu for pushes
+  and pull requests. It doesn't build or test the application.
+- `ci-tests.yml` builds and runs distribution checks on Ubuntu 22.04. Its
+  separate Address Sanitizer job runs on `ubuntu-latest` and is allowed to fail.
+- `ci-docker.yml` builds and tests in the Arch Linux container defined under
+  `util/ci/actions/archlinux-test/`.
+- `mac-tests.yaml` builds and tests on macOS using a prebuilt dependency tarball.
+  See `util/ci/macos-ci-deps/README.md` for dependency packaging.
+- `coverage.yml` builds coverage and programming documentation. The coverage
+  job is allowed to fail. Pages publication is restricted to `gnucash/gnucash`.
 
-ci-docker.yml runs tests in a Docker container running Arch Linux.
-
-mac-tests.yml runs tests on macOS using a Github-provided virtual machine. Note that this test relies on a prebuilt tarball containing all of the dependencies. Instructions for building that tarball along with some support scripts may be found in utils/ci/macos-ci-deps.
+Read individual job results before claiming verification. A passing portable
+tooling job or an allowed failure doesn't establish that native tests passed.

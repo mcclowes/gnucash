@@ -1,0 +1,15 @@
+name: Developer tools
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  tooling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test developer task boundaries
+        run: python3 -m unittest discover -s util -p test_dev.py

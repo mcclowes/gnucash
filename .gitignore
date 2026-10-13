@@ -18,6 +18,9 @@
 .scm-links
 .vscode/
 .cache/
+.fettle/shots/
+.fettle/visual-results.json
+__pycache__/
 ChangeLog
 Makefile
 Makefile.in
