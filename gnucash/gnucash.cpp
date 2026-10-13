@@ -52,6 +52,9 @@
 #include <gnc-plugin-file-history.h>
 #include <gnc-plugin-log-replay.h>
 #include <gnc-plugin-qif-import.h>
+#ifdef HAVE_ONLINE_SERVICES
+#include <gnc-plugin-online.h>
+#endif
 #include <gnc-plugin-report-system.h>
 #include <gnc-prefs.h>
 #include <gnc-prefs-utils.h>
@@ -85,6 +88,9 @@ load_gnucash_plugins()
     gnc_plugin_customer_import_create_plugin ();
     gnc_plugin_qif_import_create_plugin ();
     gnc_plugin_log_replay_create_plugin ();
+#ifdef HAVE_ONLINE_SERVICES
+    gnc_plugin_online_create_plugin ();
+#endif
 }
 
 static void

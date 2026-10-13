@@ -40,6 +40,7 @@
 #include "gnc-splash.h"
 #include "gnc-window.h"
 #include "gnc-icons.h"
+#include "gnc-gtk-utils.h"
 #include "dialog-doclink-utils.h"
 #include "dialog-commodity.h"
 #include "dialog-totd.h"
@@ -134,12 +135,60 @@ gnc_configure_date_completion (void)
     qof_date_completion_set(dc, backmonths);
 }
 
+/* The dark layer is loaded over gnucash.css when the theme is dark,
+ * and swapped in or out when the user changes theme. */
+static GtkCssProvider *provider_dark = NULL;
+
+static gboolean
+theme_is_dark (void)
+{
+    GdkRGBA color;
+    /* Ask a label inside a real (if invisible) window, so it inherits
+     * the theme's foreground the way every other label does. */
+    GtkWidget *window = gtk_offscreen_window_new ();
+    GtkWidget *probe = gtk_label_new (NULL);
+    gboolean dark;
+
+    gtk_container_add (GTK_CONTAINER (window), probe);
+    gtk_style_context_get_color (gtk_widget_get_style_context (probe),
+                                 GTK_STATE_FLAG_NORMAL, &color);
+    dark = gnc_is_dark_theme (&color);
+    gtk_widget_destroy (window);
+    return dark;
+}
+
+static void
+update_dark_layer (GtkSettings *settings, GParamSpec *pspec, gpointer user_data)
+{
+    GdkScreen *screen = gdk_screen_get_default ();
+    gboolean dark;
+
+    if (!screen)
+        return;
+    if (provider_dark)
+        gtk_style_context_remove_provider_for_screen (screen,
+                                                      GTK_STYLE_PROVIDER (provider_dark));
+    /* Decide with the dark layer out of the way. */
+    dark = theme_is_dark ();
+    if (!provider_dark)
+    {
+        provider_dark = gtk_css_provider_new ();
+        gtk_css_provider_load_from_resource (provider_dark,
+                                             GNUCASH_RESOURCE_PREFIX "/gnucash-dark.css");
+    }
+    if (dark)
+        gtk_style_context_add_provider_for_screen (screen,
+                                                   GTK_STYLE_PROVIDER (provider_dark),
+                                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
+}
+
 void
 gnc_add_css_file (void)
 {
     GtkCssProvider *provider_user, *provider_app, *provider_fallback;
     GdkDisplay *display;
     GdkScreen *screen;
+    GtkSettings *settings;
     const gchar *var;
     GError *error = 0;
 
@@ -155,6 +204,13 @@ gnc_add_css_file (void)
 
     gtk_css_provider_load_from_resource (provider_app, GNUCASH_RESOURCE_PREFIX "/gnucash.css");
     gtk_css_provider_load_from_resource (provider_fallback,  GNUCASH_RESOURCE_PREFIX "/gnucash-fallback.css");
+
+    settings = gtk_settings_get_for_screen (screen);
+    update_dark_layer (settings, NULL, NULL);
+    g_signal_connect (settings, "notify::gtk-theme-name",
+                      G_CALLBACK (update_dark_layer), NULL);
+    g_signal_connect (settings, "notify::gtk-application-prefer-dark-theme",
+                      G_CALLBACK (update_dark_layer), NULL);
 
     var = gnc_userconfig_dir ();
     if (var)

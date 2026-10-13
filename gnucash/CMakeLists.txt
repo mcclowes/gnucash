@@ -24,6 +24,7 @@ add_subdirectory (gnome-search)
 add_subdirectory (gtkbuilder)
 add_subdirectory (html)
 add_subdirectory (import-export)
+add_subdirectory (online)
 add_subdirectory (python)
 add_subdirectory (register)
 add_subdirectory (report)
@@ -54,6 +55,7 @@ set(gnucash_noinst_HEADERS
 
 set(gnucash_GRESOURCES
   gnucash.css
+  gnucash-dark.css
   gnucash-fallback.css
   ui/gnc-embedded-register-window.ui
   ui/gnc-main-window.ui
@@ -113,6 +115,10 @@ target_link_libraries (gnucash
    PkgConfig::GTK3 ${GUILE_LDFLAGS} PkgConfig::GLIB2
    ${Boost_LIBRARIES}
 )
+
+if (HAVE_ONLINE_SERVICES)
+  target_link_libraries (gnucash gnc-online)
+endif()
 
 set(gnucash_cli_SOURCES
     gnucash-cli.cpp
@@ -279,5 +285,5 @@ set_local_dist(gnucash_DIST_local CMakeLists.txt environment.in generate-gnc-scr
     ${gnucash_noinst_HEADERS} ${gnucash_EXTRA_DIST})
 
 set (gnucash_DIST ${gnucash_DIST_local} ${gnome_DIST} ${gnome_search_DIST} ${gnome_utils_DIST}
-    ${gschemas_DIST} ${gtkbuilder_DIST} ${html_DIST} ${import_export_DIST} ${python_DIST} ${register_DIST}
+    ${gschemas_DIST} ${gtkbuilder_DIST} ${html_DIST} ${import_export_DIST} ${online_DIST} ${python_DIST} ${register_DIST}
     ${report_DIST} ${overrides_DIST} ${test_bin_DIST} ${ui_DIST} PARENT_SCOPE)

@@ -66,6 +66,7 @@ option (WITH_AQBANKING "Build this project with aqbanking (online banking and a 
 option (WITH_GNUCASH "Build all of GnuCash, not just the library" ON)
 option (WITH_OFX "compile with ofx support (needs LibOFX)" ON)
 option (WITH_PYTHON "enable python plugin and bindings" OFF)
+option (WITH_ONLINE_SERVICES "Build bank feeds (Plaid) and the HMRC Making Tax Digital VAT bridge (needs libcurl)" ON)
 option (ENABLE_BINRELOC "compile with binary relocation support" ON)
 option (DISABLE_NLS "do not use Native Language Support" OFF)
 option (COVERAGE "Instrument a Debug or Asan build for coverage reporting" OFF)
@@ -591,6 +592,11 @@ pkg_check_modules (LIBSECRET libsecret-1>=0.18)
 IF (LIBSECRET_FOUND)
   SET (HAVE_LIBSECRET ON)
 ENDIF (LIBSECRET_FOUND)
+
+if (WITH_ONLINE_SERVICES AND WITH_GNUCASH)
+  pkg_check_modules (CURL REQUIRED IMPORTED_TARGET libcurl>=7.68)
+  set (HAVE_ONLINE_SERVICES ON)
+endif()
 
 #BOOST
 set (Boost_USE_MULTITHREADED ON)
