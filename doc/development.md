@@ -42,6 +42,14 @@ contacts financial services. Its passing result is not an application build.
 
 ## Convention adoption
 
+Project commands live in `.clip/commands.md`, migrated from the Saggar command
+list with descriptions and explicit effects. Run `clip commands` to list them,
+`clip commands check --strict` to validate them, and
+`clip sync --target agents-md` to refresh the generated guidance in `AGENTS.md`.
+The Python runner remains the implementation. Clip does not check its task names
+for drift, so review the command list when changing `util/dev.py`. GitHub issues
+remain disabled; this paragraph records the scope of the Clip adoption.
+
 Scope: transfer useful practices from Saggar desktop while preserving this
 fork's upstream build, languages, compatibility, and release process. GitHub
 issues were disabled on this fork during the work, so this section records the
